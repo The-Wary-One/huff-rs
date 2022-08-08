@@ -333,6 +333,8 @@ pub struct Argument {
     pub indexed: bool,
     /// The argument span
     pub span: AstSpan,
+    /// Nested arguments
+    pub nested: Option<Box<Vec<Argument>>>,
 }
 
 /// A Function Signature

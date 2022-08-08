@@ -117,7 +117,8 @@ pub enum TokenKind {
     JumpTablePacked,
     /// A Code Table
     CodeTable,
-    /// A builtin function (__codesize, __tablesize, __tablestart)
+    /// A builtin function
+    /// Can be one of: __codesize, __tablesize, __tablestart, __FUNC_SIG, __EVENT_HASH, __ERROR, __RIGHTPAD
     BuiltinFunction(String),
 }
 

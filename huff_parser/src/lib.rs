@@ -717,6 +717,7 @@ impl Parser {
                         arg_type: None,
                         indexed: false,
                         span: AstSpan(vec![self.current_token.span.clone()]),
+                        nested: None
                     });
 
                     self.consume();
@@ -733,9 +734,30 @@ impl Parser {
                         arg_type: None,
                         indexed: false,
                         span: AstSpan(vec![self.current_token.span.clone()]),
+                        nested: None
                     });
 
                     self.consume();
+                    continue
+                }
+
+                // Builtins can have nested arguments
+                if let TokenKind::BuiltinFunction(name) = self.current_token.kind.clone() {
+                    // Consume the builtin string name
+                    let cloned_span = self.current_token.span.clone();
+                    self.consume();
+
+                    // Recurse into builtin args
+                    let nested_args = self.parse_args(select_name, select_type, has_indexed, is_builtin)?;
+
+                    // Push a builtin arg
+                    args.push(Argument {
+                        name: Some(name),
+                        arg_type: None,
+                        indexed: false,
+                        span: AstSpan(vec![cloned_span]),
+                        nested: Some(Box::new(nested_args))
+                    });
                     continue
                 }
             }

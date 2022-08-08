@@ -24,7 +24,9 @@ pub enum Context {
     MacroDefinition,
     /// Macro's body context
     MacroBody,
-    /// Macro's argument context (definition or being called)
+    /// Macro's parameter context (in the macro definition)
+    MacroParameters,
+    /// Macro's arguments (the values passed into a macro when invoked)
     MacroArgs,
     /// ABI context
     Abi,
@@ -559,10 +561,12 @@ impl<'a> Iterator for Lexer<'a> {
                         self.dyn_consume(|c| c.is_alphanumeric() || c.eq(&'_'));
 
                         let slice = self.slice();
+                        tracing::debug!(target: "lexer", "[huff_lexer] Found token: {:?}, checking if builtin with context {:?}", slice, self.context);
                         // Check for built-in function calls
-                        if self.context == Context::MacroBody &&
+                        if (self.context == Context::MacroBody || self.context == Context::MacroArgs) &&
                             BuiltinFunctionKind::try_from(&slice).is_ok()
                         {
+                            tracing::debug!(target: "lexer", "[huff_lexer] Lexed Builtin!");
                             TokenKind::BuiltinFunction(slice)
                         } else {
                             TokenKind::Ident(slice)
@@ -593,6 +597,7 @@ impl<'a> Iterator for Lexer<'a> {
                 '(' => {
                     match self.context {
                         Context::Abi => self.context = Context::AbiArgs,
+                        Context::MacroDefinition => self.context = Context::MacroParameters,
                         Context::MacroBody => self.context = Context::MacroArgs,
                         _ => {}
                     }
@@ -602,6 +607,7 @@ impl<'a> Iterator for Lexer<'a> {
                     match self.context {
                         Context::AbiArgs => self.context = Context::Abi,
                         Context::MacroArgs => self.context = Context::MacroBody,
+                        Context::MacroParameters => self.context = Context::MacroDefinition,
                         _ => {}
                     }
                     TokenKind::CloseParen
